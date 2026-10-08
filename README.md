@@ -4,60 +4,56 @@
 
 ![Key Rain running over a clean demo terminal](preview.png)
 
-Previously called Falling Keys. The internal plugin ID and IPC commands remain
-unchanged, so existing settings and shortcuts continue to work.
+Matrix-inspired keystroke rain with a native Omarchy control panel. The transparent
+Wayland overlay is click-through: windows underneath remain fully interactive.
+Each physical key press creates one drop; holding a key does not repeat it.
 
-An Omarchy bar widget with an enable/disable control, layout selection, and a
-keyboard-free animation preview. Matrix rain and Cascade are included.
-The head shows the pressed key; each fading trail character independently
-cycles through letters, digits, katakana, and symbols every 80–200 ms.
-Each key press creates one drop. Holding a key does not create additional
-drops; release and press it again to create another.
+## Controls
 
-The header switch enables/disables the effect. Follow theme uses Omarchy's
-live foreground color for key heads and accent color for trails; switch it
-off to use classic Matrix green. Split keyboard places physical QWERT /
-ASDFG / ZXCVB letter positions on the left half, and YUIOP / HJKL / NM on
-the right, independent of the active language. Number-row, numpad, and other
-non-letter positions retain full-screen placement. Both options and the
-animation layout persist together in the widget's inline shell settings.
-Tab and Space operate panel controls; Escape closes the panel. The panel
-uses the native Omarchy hero, switches, toggle rows, and style tokens, with
-scrolling when the available height is too small.
-Font size uses three presets: Small (16 px), Medium (22 px, the original
-size), and Large (30 px). Font size persists with the other preferences and
-applies immediately. Column spacing and trail spacing scale with the glyphs.
-Opacity uses a native slider with a percentage readout, ranging from 10% to
-100% of the original effect strength. It adjusts heads and trails together,
-applies while dragging, and saves when released. Mouse wheel or arrow keys
-adjust it in 5% steps; Home and End select the endpoints. The panel itself
-keeps its normal opacity. The default is 100%.
-Fall height uses a second slider (10–100% of each screen's height). At 50%,
-the pressed letter disappears halfway down the screen. The entire stream
-smoothly fades over the final 20% of its travel and is removed at the chosen
-endpoint. This works with both animation layouts and all font/opacity
-settings. Changes apply immediately and save when released.
+| Control | Options |
+| --- | --- |
+| Header switch | Enable or stop keyboard input |
+| Layout | Matrix or Cascade |
+| Font size | 16, 22, or 30 px |
+| Opacity | 10–100% |
+| Fall height | 10–100% of each screen; fades over the final 20% |
+| Color | Theme, classic Matrix green, or Custom swatches/hex color |
+| Scramble | Off–1000 ms in 50 ms steps; defaults to 300 ms |
+| Split keyboard | Left/right letter positions fall on the corresponding screen half |
+| Preview | Sample letters without keyboard access or authentication |
 
-The animation uses a transparent Wayland overlay with `mask: Region {}` and
-`WlrKeyboardFocus.None`. It does not intercept clicks, scrolling, or typing.
-The control popup is interactive while open, like other bar panels.
+The leading symbol scrambles, then settles on the pressed key. On short falls,
+scrambling is shortened so the key can settle before disappearing. Trail symbols
+keep cycling independently. Number-row, numpad, and other non-letter keys use
+the full screen in split mode. Placement follows physical QWERTY positions,
+independent of the selected language.
 
-The effect starts disabled in each shell session. Enabling launches a small
-`pkexec` keyboard reader and may require authentication. It reads keyboard
-events without grabbing devices; it never records them to disk. Disabling
-closes the reader and clears particles. Ctrl+Alt+Esc also disables it, and
-the plugin checks Omarchy's lock state and disables when the screen locks.
-Pause before entering passwords in applications: these are global keystrokes.
+Preferences save automatically. Tab navigates controls; Space/Enter selects;
+arrows adjust sliders; Home/End select their endpoints; Escape closes the panel.
+The effect starts disabled after a shell restart.
 
-## Install and update
+## Keyboard access and privacy
 
-Requires Omarchy with the plugin API and Hyprland's `solitaryBlockedBy` monitor
-state, Python 3, GCC, pkgconf, libxkbcommon, and polkit (`pkexec`). The compiler
-and xkb headers are needed locally; no dependencies are downloaded by the plugin.
-Install missing Arch packages with Omarchy's package manager before continuing.
+Enabling starts a locally compiled reader through `pkexec`. Your system may ask
+for a password or fingerprint to authorize access to physical keyboard events.
+Key Rain does not receive fingerprint data. Preview needs no authorization.
 
-Download or clone [omarchy-key-rain](https://github.com/dfrost90/omarchy-key-rain),
-then run these commands from its source directory as your normal desktop user:
+**Pause before typing passwords:** global input includes application password
+fields. Events are transient, never saved to disk or sent over a network. The
+reader does not grab devices. Disabling, Ctrl+Alt+Esc, or closing its input pipe
+stops it. Detected screen lock or an unknown lock state also disables the effect;
+lock monitoring is polling, not instantaneous. See [SECURITY.md](SECURITY.md).
+
+## Install
+
+Requires Omarchy with the plugin API, Hyprland with `solitaryBlockedBy` monitor
+state, Python 3, GCC, pkgconf, libxkbcommon (including headers), and polkit
+(`pkexec`). Install missing dependencies with Omarchy's package manager first.
+No dependencies are downloaded automatically, and no compiled executable is
+included in the repository.
+
+Download or clone [this repository](https://github.com/dfrost90/omarchy-key-rain).
+From its directory, as your normal desktop user:
 
 ```sh
 python3 install.py
@@ -65,52 +61,57 @@ omarchy-shell shell rescanPlugins
 omarchy plugin enable io.github.dfrost90.falling-keys
 ```
 
-A plugin installed directly into Omarchy's plugin directory also builds its
-reader locally when first enabled. Build failures are shown in the panel;
-run `python3 backend.py build` in that directory for diagnostics.
-Updates to live service code require `omarchy restart shell`. Existing display
-preferences remain saved, and input reading starts disabled after a restart.
+The installer builds locally and copies only plugin files into your Omarchy
+configuration. It does not overwrite `shell.json`. A direct plugin-directory
+installation also builds the reader on first enable. For build diagnostics,
+run `python3 backend.py build` there.
 
-## Remove
+## Update and remove
 
-Disable input reading, then remove the plugin through Omarchy:
+To update, obtain the newer source, run `python3 install.py`, then
+`omarchy restart shell` to reload live service code. Your preferences remain
+saved; enable the effect again when ready.
+
+To remove:
 
 ```sh
 omarchy-shell falling-keys disable
 omarchy plugin disable io.github.dfrost90.falling-keys
 ```
 
-Remove the directory `~/.config/omarchy/plugins/io.github.dfrost90.falling-keys`
-(or its equivalent under `$XDG_CONFIG_HOME`) and run
-`omarchy-shell shell rescanPlugins`. There are no system files, services, or
-privilege rules to remove. Remove any remaining bar entry in Omarchy's bar editor.
+Delete `~/.config/omarchy/plugins/io.github.dfrost90.falling-keys` (or its
+equivalent under `$XDG_CONFIG_HOME`), then run `omarchy-shell shell rescanPlugins`.
+Remove any remaining bar entry through Omarchy's bar editor. There are no system
+services or privilege policies to remove.
+
+The permanent ID and `falling-keys` IPC target retain the original Falling Keys
+name for compatibility. Old theme and scramble toggles migrate automatically.
 
 ## Development
 
-Tests additionally require Node.js for layout checks.
-Run `python3 tests/check.py` for reader state, JSON, lock-state, and layout tests.
-Run `omarchy plugin validate .` for installed-host manifest validation.
-The source release excludes compiled binaries and local audit screenshots.
-See [SECURITY.md](SECURITY.md) for privilege and lock-transition limitations.
-Licensed under [MIT](LICENSE).
+```sh
+python3 tests/check.py
+QT_QPA_PLATFORM=offscreen QT_QPA_PLATFORMTHEME= QT_QUICK_CONTROLS_STYLE=Basic /usr/lib/qt6/bin/qmltestrunner -input tests
+omarchy plugin validate .
+```
 
-Source files:
+Tests additionally require Node.js and Qt's QML test runner. They cover reader
+state/JSON, lock-state handling, split placement, fades, scramble duration, and
+short falls. The C tests use AddressSanitizer and UndefinedBehaviorSanitizer.
 
-- `Service.qml`: one reader and shared controls for all monitors.
-- `Rain.qml`: particle animation. Add new rendering layouts here and register
-  their names in `Service.qml`'s `layouts` array.
-- `Layouts.js`: physical keyboard halves and bounded drop positions.
-- `BarWidget.qml`: the bar button and control panel. Layout selection persists
-  in the widget's inline entry in Omarchy's `shell.json`.
-- `reader.c`: bounded event reader, xkb layout handling, hotplug discovery,
-  JSON output, and stdin lifetime management.
-- `backend.py`: unprivileged local compilation and compositor lock monitoring.
+`Service.qml` owns input and shared settings; `Rain.qml` renders particles;
+`Layouts.js` handles placement/fades; `BarWidget.qml`, `ColorPicker.qml`, and
+`PercentControl.qml` implement the panel. `backend.py` builds and watches lock
+state without privileges; only `reader.c` runs through `pkexec`.
 
-IPC controls: `omarchy-shell falling-keys preview`, `enable`, `disable`,
-`status`, or `setLayout cascade`.
+IPC: `omarchy-shell falling-keys status`, `preview`, `enable`, `disable`,
+`setLayout cascade`, `setColorMode custom`, `setCustomColor '#55ccff'`, or
+`setScrambleDuration 300`. IPC settings apply live; panel changes persist them.
 
-Current limits: rendering runs at 30 FPS, with at most 96 particles per
-monitor. Keyboard settings are read when enabling; disable/re-enable after
-changing the configured layouts. IME composition and per-device keyboard
-overrides are not tracked. Switching layouts while enabled is handled by
-the configured xkb switching shortcut.
+Rendering targets 30 FPS with at most 96 streams per monitor. Keyboard configuration
+is captured when enabling; re-enable after changes. IME composition, per-device
+remappings, and compositor-driven layout changes are not fully tracked. Physical
+xkb layout-switch shortcuts work when present in the captured configuration.
+
+Licensed under [MIT](LICENSE). Marketplace approval requires maintainer review
+of privileged keyboard access and the installer.

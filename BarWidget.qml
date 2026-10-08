@@ -17,7 +17,9 @@ Panel {
     function restoreSettings() {
         if (!effect) return;
         effect.setLayout(setting("layout", "matrix"));
-        effect.followTheme = setting("followTheme", false) === true;
+        effect.setColorMode(setting("colorMode", "") || (setting("followTheme", false) === true ? "theme" : "matrix"));
+        effect.setCustomColor(setting("customColor", "#36e568"));
+        effect.setScrambleDuration(Number(setting("scrambleDurationMs", setting("scrambleOnEntry", true) === true ? 300 : 0)));
         effect.setSplitMode(setting("splitMode", false) === true);
         effect.setFontSize(Number(setting("fontSize", 22)));
         effect.setOpacity(Number(setting("opacityPercent", 100)));
@@ -26,7 +28,7 @@ Panel {
     function saveSettings() {
         if (!effect || !bar || !bar.shell) return;
         var next = Object.assign({}, settings, {
-            layout: effect.layout, followTheme: effect.followTheme, splitMode: effect.splitMode, fontSize: effect.fontSize, opacityPercent: effect.opacityPercent, fallHeightPercent: effect.fallHeightPercent
+            layout: effect.layout, followTheme: effect.followTheme, colorMode: effect.colorMode, customColor: effect.customColor.toString(), splitMode: effect.splitMode, scrambleOnEntry: effect.scrambleOnEntry, scrambleDurationMs: effect.scrambleDurationMs, fontSize: effect.fontSize, opacityPercent: effect.opacityPercent, fallHeightPercent: effect.fallHeightPercent
         });
         bar.shell.updateEntryInline(moduleName, next);
     }
@@ -171,31 +173,57 @@ Panel {
                         onMoved: value => root.effect.setFallHeight(value)
                         onReleased: root.saveSettings()
                     }
-                    Text {
-                        Layout.fillWidth: true
-                        text: "Distance down the screen. Fades out near the end."
-                        color: root.foreground; opacity: 0.8
-                        font.family: Style.font.family; font.pixelSize: Style.font.caption
-                        wrapMode: Text.Wrap; textFormat: Text.PlainText
-                    }
                     PanelSeparator { Layout.fillWidth: true; foreground: root.foreground }
-                    Toggle {
+                    PanelSectionHeader { text: "COLOR"; foreground: root.foreground }
+                    RowLayout {
                         Layout.fillWidth: true
-                        label: "Follow theme"
-                        description: "Use the current Omarchy colors."
+                        spacing: Style.space(8)
+                        Repeater {
+                            model: [{id: "theme", name: "Theme"}, {id: "matrix", name: "Matrix"}, {id: "custom", name: "Custom"}]
+                            Button {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredWidth: 1
+                                text: modelData.name
+                                foreground: root.foreground
+                                selected: !!root.effect && root.effect.colorMode === modelData.id
+                                enabled: !!root.effect
+                                bordered: true
+                                focusable: true
+                                Accessible.role: Accessible.RadioButton
+                                Accessible.name: text + " color"
+                                Accessible.checked: selected
+                                onClicked: { root.effect.setColorMode(modelData.id); root.saveSettings(); }
+                            }
+                        }
+                    }
+                    ColorPicker {
+                        Layout.fillWidth: true
+                        visible: !!root.effect && root.effect.colorMode === "custom"
+                        value: root.effect ? root.effect.customColor : "#36e568"
                         foreground: root.foreground
-                        checked: !!(root.effect && root.effect.followTheme)
+                        onSelected: value => { root.effect.setCustomColor(value); root.saveSettings(); }
+                    }
+                    PercentControl {
+                        Layout.fillWidth: true
+                        label: "Scramble"
+                        bar: root.bar
+                        foreground: root.foreground
                         enabled: !!root.effect
-                        Accessible.role: Accessible.CheckBox
-                        Accessible.name: label
-                        Accessible.description: description
-                        Accessible.checked: checked
-                        onClicked: { root.effect.followTheme = !root.effect.followTheme; root.saveSettings(); }
+                        minimum: 0
+                        maximum: 1000
+                        step: 50
+                        snap: true
+                        suffix: " ms"
+                        zeroText: "Off"
+                        value: root.effect ? root.effect.scrambleDurationMs : 300
+                        onMoved: value => root.effect.setScrambleDuration(value)
+                        onReleased: root.saveSettings()
                     }
                     Toggle {
                         Layout.fillWidth: true
                         label: "Split keyboard"
-                        description: "Left-hand letters fall on the left; right-hand letters on the right. Other keys use the full screen."
+                        description: "Letters follow their keyboard half."
                         foreground: root.foreground
                         checked: !!(root.effect && root.effect.splitMode)
                         enabled: !!root.effect
@@ -207,7 +235,7 @@ Panel {
                     }
                     Button {
                         Layout.fillWidth: true
-                        text: "Preview animation"
+                        text: "Preview"
                         iconText: "󰐊"
                         foreground: root.foreground
                         bordered: true
@@ -227,7 +255,7 @@ Panel {
                     }
                     Text {
                         Layout.fillWidth: true
-                        text: "Ctrl+Alt+Esc to disable · Letters are click-through.\nPause before typing passwords."
+                        text: "Ctrl+Alt+Esc to stop.\nPause before typing passwords."
                         color: root.foreground; opacity: 0.8
                         font.family: Style.font.family; font.pixelSize: Style.font.caption
                         wrapMode: Text.Wrap; textFormat: Text.PlainText

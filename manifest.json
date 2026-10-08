@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "io.github.dfrost90.falling-keys",
   "name": "Key Rain",
-  "version": "0.6.1",
+  "version": "0.7.2",
   "author": "dfrost90",
   "description": "Click-through falling keystrokes with a layout control panel.",
   "kinds": [
@@ -24,18 +24,16 @@
       "splitMode": false,
       "fontSize": 22,
       "opacityPercent": 100,
-      "fallHeightPercent": 100
+      "fallHeightPercent": 100,
+      "customColor": "#36e568",
+      "colorMode": "",
+      "scrambleOnEntry": true
     },
     "schema": [
       {
         "key": "layout",
         "type": "string",
         "label": "Animation layout"
-      },
-      {
-        "key": "followTheme",
-        "type": "boolean",
-        "label": "Follow theme"
       },
       {
         "key": "splitMode",
@@ -56,6 +54,21 @@
         "key": "fallHeightPercent",
         "type": "number",
         "label": "Fall height (10–100% of screen)"
+      },
+      {
+        "key": "colorMode",
+        "type": "string",
+        "label": "Color mode (theme, matrix, custom)"
+      },
+      {
+        "key": "customColor",
+        "type": "string",
+        "label": "Custom color (#RRGGBB)"
+      },
+      {
+        "key": "scrambleDurationMs",
+        "type": "number",
+        "label": "Scramble duration (0–1000 ms; 0 disables)"
       }
     ]
   },

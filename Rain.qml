@@ -5,6 +5,13 @@ Canvas {
     id: root
     property string layout: "matrix"
     property bool splitMode: false
+    property int scrambleDurationMs: 300
+    onScrambleDurationMsChanged: {
+        particles.forEach(function(p) {
+            if (p.headTime < p.headDuration) p.headDuration = Math.min(scrambleDurationMs / 1000, fallEnd * 0.75 / p.speed);
+        });
+        requestPaint();
+    }
     property int glyphSize: 22
     property real intensity: 1
     property real fallHeight: 1
@@ -33,9 +40,38 @@ Canvas {
             trail.push({index: Math.floor(Math.random() * glyphs.length),
                         elapsed: Math.random() * interval, interval: interval});
         }
+        var speed = 170 + Math.random() * 110;
         next.push({text: text, x: x, y: -glyphSize - 2,
-                   speed: 170 + Math.random() * 110, trail: trail});
+                   speed: speed, trail: trail,
+                   headTime: 0, headDuration: Math.min(scrambleDurationMs / 1000, fallEnd * 0.75 / speed),
+                   headTick: 0, headIndex: Math.floor(Math.random() * glyphs.length)});
         particles = next;
+    }
+    function headText(p) {
+        return p.headTime < p.headDuration ? glyphs.charAt(p.headIndex) : p.text;
+    }
+    function advance(dt) {
+        particles = particles.filter(function(p) {
+            p.y += p.speed * dt;
+            // Count visible travel, so large glyphs get the same entry effect.
+            if (p.y > 0 && p.headTime < p.headDuration) {
+                p.headTime = Math.min(p.headDuration, p.headTime + dt);
+                p.headTick += dt;
+                if (p.headTick >= 0.05) {
+                    p.headTick %= 0.05;
+                    p.headIndex = (p.headIndex + 1 + Math.floor(Math.random() * (root.glyphs.length - 1))) % root.glyphs.length;
+                }
+            }
+            for (var i = 0; i < p.trail.length; i++) {
+                var tail = p.trail[i];
+                tail.elapsed += dt;
+                if (tail.elapsed >= tail.interval) {
+                    tail.elapsed %= tail.interval;
+                    tail.index = (tail.index + 1 + Math.floor(Math.random() * (root.glyphs.length - 1))) % root.glyphs.length;
+                }
+            }
+            return p.y < root.fallEnd;
+        });
     }
     Timer {
         interval: 33; repeat: true; running: root.hasParticles
@@ -44,18 +80,7 @@ Canvas {
             var now = Date.now();
             var dt = Math.min(0.1, (now - root.lastFrame) / 1000);
             root.lastFrame = now;
-            root.particles = root.particles.filter(function(p) {
-                p.y += p.speed * dt;
-                for (var i = 0; i < p.trail.length; i++) {
-                    var tail = p.trail[i];
-                    tail.elapsed += dt;
-                    if (tail.elapsed >= tail.interval) {
-                        tail.elapsed %= tail.interval;
-                        tail.index = (tail.index + 1 + Math.floor(Math.random() * (root.glyphs.length - 1))) % root.glyphs.length;
-                    }
-                }
-                return p.y < root.fallEnd;
-            });
+            root.advance(dt);
             root.requestPaint();
         }
     }
@@ -70,7 +95,7 @@ Canvas {
             for (var j = tails; j >= 0; j--) {
                 ctx.globalAlpha = intensity * fade * (j === 0 ? 0.9 : 0.42 * (1 - j / (tails + 1)));
                 ctx.fillStyle = j === 0 ? headColor.toString() : trailColor.toString();
-                ctx.fillText(j === 0 ? p.text : glyphs.charAt(p.trail[j - 1].index), p.x, p.y - j * trailSpacing);
+                ctx.fillText(j === 0 ? headText(p) : glyphs.charAt(p.trail[j - 1].index), p.x, p.y - j * trailSpacing);
             }
         }
         ctx.globalAlpha = 1;

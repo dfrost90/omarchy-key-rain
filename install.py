@@ -6,7 +6,7 @@ import tempfile
 from backend import ROOT, build
 
 FILES = ('manifest.json', 'BarWidget.qml', 'Service.qml', 'Rain.qml', 'Layouts.js',
-         'PercentControl.qml', 'reader.c', 'backend.py', 'falling-keys-reader',
+         'PercentControl.qml', 'ColorPicker.qml', 'reader.c', 'backend.py', 'falling-keys-reader',
          'README.md', 'LICENSE', 'SECURITY.md', 'install.py')
 
 

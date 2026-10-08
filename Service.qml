@@ -12,13 +12,17 @@ Item {
     property bool starting: false
     property string status: "Disabled"
     property string layout: "matrix"
-    property bool followTheme: false
+    property string colorMode: "matrix"
+    property color customColor: "#36e568"
+    readonly property bool followTheme: colorMode === "theme"
     property bool splitMode: false
+    property int scrambleDurationMs: 300
+    readonly property bool scrambleOnEntry: scrambleDurationMs > 0
     property int fontSize: 22
     property int opacityPercent: 100
     property int fallHeightPercent: 100
     readonly property var fontSizes: [{size: 16, name: "Small"}, {size: 22, name: "Medium"}, {size: 30, name: "Large"}]
-    readonly property var layouts: [{id: "matrix", name: "Matrix rain"}, {id: "cascade", name: "Cascade"}]
+    readonly property var layouts: [{id: "matrix", name: "Matrix"}, {id: "cascade", name: "Cascade"}]
     readonly property string readerPath: decodeURIComponent(Qt.resolvedUrl("falling-keys-reader").toString().replace(/^file:\/\//, ""))
     property bool lockSafe: false
     property bool previewPending: false
@@ -36,12 +40,16 @@ Item {
         function disable(): void { root.setActive(false) }
         function enable(): void { root.setActive(true) }
         function setLayout(value: string): void { root.setLayout(value) }
-        function setFollowTheme(value: bool): void { root.followTheme = value }
+        function setFollowTheme(value: bool): void { root.setColorMode(value ? "theme" : "matrix") }
+        function setColorMode(value: string): void { root.setColorMode(value) }
+        function setCustomColor(value: string): void { root.setCustomColor(value) }
+        function setScrambleDuration(value: int): void { root.setScrambleDuration(value) }
+        function setScrambleOnEntry(value: bool): void { root.setScrambleDuration(value ? 300 : 0) }
         function setSplitMode(value: bool): void { root.setSplitMode(value) }
         function setFontSize(value: int): void { root.setFontSize(value) }
         function setOpacity(value: int): void { root.setOpacity(value) }
         function setFallHeight(value: int): void { root.setFallHeight(value) }
-        function status(): string { return JSON.stringify({active: root.active, starting: root.starting, layout: root.layout, followTheme: root.followTheme, splitMode: root.splitMode, fontSize: root.fontSize, opacityPercent: root.opacityPercent, fallHeightPercent: root.fallHeightPercent, status: root.status}) }
+        function status(): string { return JSON.stringify({active: root.active, starting: root.starting, layout: root.layout, followTheme: root.followTheme, colorMode: root.colorMode, customColor: root.customColor.toString(), splitMode: root.splitMode, scrambleOnEntry: root.scrambleOnEntry, scrambleDurationMs: root.scrambleDurationMs, fontSize: root.fontSize, opacityPercent: root.opacityPercent, fallHeightPercent: root.fallHeightPercent, status: root.status}) }
     }
     Process {
         id: lockWatcher
@@ -86,8 +94,19 @@ Item {
             reader.running = false;
             clear(); status = "Disabled"; return;
         }
-        if (reader.running || starting || builder.running || layoutProbe.running || optionsProbe.running || devicesProbe.running || lockWatcher.running) return;
+        if (reader.running || starting || builder.running || layoutProbe.running || optionsProbe.running || devicesProbe.running || (lockWatcher.running && !lockSafe)) return;
         starting = true; status = "Requesting keyboard access…";
+        if (lockSafe) builder.running = true;
+    }
+    function setScrambleDuration(value) {
+        if (!Number.isFinite(value)) return;
+        scrambleDurationMs = Math.max(0, Math.min(1000, Math.round(value / 50) * 50));
+    }
+    function setColorMode(value) {
+        if (["theme", "matrix", "custom"].indexOf(value) >= 0) colorMode = value;
+    }
+    function setCustomColor(value) {
+        if (typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value)) customColor = value;
     }
     function setLayout(value) {
         if (!layouts.some(function(item) { return item.id === value })) return;
@@ -202,11 +221,12 @@ Item {
                 anchors.fill: parent
                 layout: root.layout
                 splitMode: root.splitMode
+                scrambleDurationMs: root.scrambleDurationMs
                 glyphSize: root.fontSize
                 intensity: root.opacityPercent / 100
                 fallHeight: root.fallHeightPercent / 100
-                headColor: root.followTheme ? Color.foreground : "#cbffd5"
-                trailColor: root.followTheme ? Color.accent : "#36e568"
+                headColor: root.followTheme ? Color.foreground : root.colorMode === "custom" ? Qt.tint(root.customColor, "#bbffffff") : "#cbffd5"
+                trailColor: root.followTheme ? Color.accent : root.colorMode === "custom" ? root.customColor : "#36e568"
             }
             Connections {
                 target: root
