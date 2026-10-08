@@ -42,13 +42,21 @@ Key Rain does not receive fingerprint data. Preview needs no authorization.
 fields. Events are transient, never saved to disk or sent over a network. The
 reader does not grab devices. Disabling, Ctrl+Alt+Esc, or closing its input pipe
 stops it. Detected screen lock or an unknown lock state also disables the effect;
-lock monitoring is polling, not instantaneous. See [SECURITY.md](SECURITY.md).
+lock monitoring is polling, not instantaneous.
+
+The reader verifies the invoking user through pkexec and requires exactly one
+active, local Wayland user session in logind. It opens only initialized keyboard
+devices assigned to that session’s udev seat. Other users’ seats are excluded.
+Session metadata changes stop the reader conservatively; re-enable afterward.
+Missing ownership data or multiple active Wayland sessions for the same user
+prevent enabling. See [SECURITY.md](SECURITY.md).
 
 ## Install
 
 Requires Omarchy with the plugin API, Hyprland with `solitaryBlockedBy` monitor
 state, Python 3, GCC, pkgconf, libxkbcommon (including headers), and polkit
-(`pkexec`). Install missing dependencies with Omarchy's package manager first.
+(`pkexec`), systemd-logind, and the libsystemd/libudev libraries and headers.
+Install missing dependencies with Omarchy's package manager first.
 No dependencies are downloaded automatically, and no compiled executable is
 included in the repository.
 
@@ -96,13 +104,15 @@ omarchy plugin validate .
 ```
 
 Tests additionally require Node.js and Qt's QML test runner. They cover reader
-state/JSON, lock-state handling, split placement, fades, scramble duration, and
+state/JSON, English/Ukrainian/Russian switching, seat/session ownership denial,
+lock-state handling, split placement, fades, scramble duration, and
 short falls. The C tests use AddressSanitizer and UndefinedBehaviorSanitizer.
 
 `Service.qml` owns input and shared settings; `Rain.qml` renders particles;
 `Layouts.js` handles placement/fades; `BarWidget.qml`, `ColorPicker.qml`, and
 `PercentControl.qml` implement the panel. `backend.py` builds and watches lock
-state without privileges; only `reader.c` runs through `pkexec`.
+state without privileges; only `reader.c` runs through `pkexec`. `SeatAccess.h`
+enforces the privileged reader’s logind/udev ownership checks.
 
 IPC: `omarchy-shell falling-keys status`, `preview`, `enable`, `disable`,
 `setLayout cascade`, `setColorMode custom`, `setCustomColor '#55ccff'`, or
@@ -110,8 +120,10 @@ IPC: `omarchy-shell falling-keys status`, `preview`, `enable`, `disable`,
 
 Rendering targets 30 FPS with at most 96 streams per monitor. Keyboard configuration
 is captured when enabling; re-enable after changes. IME composition, per-device
-remappings, and compositor-driven layout changes are not fully tracked. Physical
-xkb layout-switch shortcuts work when present in the captured configuration.
+remappings are not fully tracked. Keyboard language changes follow Hyprland live,
+including switches from the bar. Virtual input-method keyboards are excluded
+when choosing the initial language. Changing the configured list of layouts
+still requires re-enabling.
 
 Licensed under [MIT](LICENSE). Marketplace approval requires maintainer review
 of privileged keyboard access and the installer.

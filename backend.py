@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parent
 def build():
     source = ROOT / 'reader.c'
     target = ROOT / 'falling-keys-reader'
-    if target.is_file() and target.stat().st_mtime_ns >= source.stat().st_mtime_ns:
+    if target.is_file() and target.stat().st_mtime_ns >= max(source.stat().st_mtime_ns, (ROOT / 'SeatAccess.h').stat().st_mtime_ns):
         return
-    flags = subprocess.check_output(['pkg-config', '--cflags', '--libs', 'xkbcommon'], text=True).split()
+    flags = subprocess.check_output(['pkg-config', '--cflags', '--libs', 'xkbcommon', 'libsystemd', 'libudev'], text=True).split()
     with tempfile.TemporaryDirectory(prefix='.build-', dir=ROOT) as temporary:
         output = Path(temporary) / 'reader'
         subprocess.run(['gcc', '-std=c11', '-Wall', '-Wextra', '-Werror', '-O2',

@@ -18,8 +18,10 @@ rows = [json.loads(line) for line in subprocess.check_output([str(ROOT / 'fallin
 assert [row['text'] for row in rows] == ['A', '"\\', 'ї']
 with tempfile.TemporaryDirectory() as directory:
     output = str(Path(directory) / 'reader-test')
-    flags = subprocess.check_output(['pkg-config', '--cflags', '--libs', 'xkbcommon'], text=True).split()
+    flags = subprocess.check_output(['pkg-config', '--cflags', '--libs', 'xkbcommon', 'libsystemd', 'libudev'], text=True).split()
     subprocess.run(['gcc', '-Wall', '-Wextra', '-Werror', '-fsanitize=address,undefined', '-g', str(ROOT / 'tests/reader_test.c'), '-o', output, *flags], check=True)
+    subprocess.run([output], check=True)
+    subprocess.run(['gcc', '-Wall', '-Wextra', '-Werror', '-fsanitize=address,undefined', '-g', str(ROOT / 'tests/seat_access_test.c'), '-o', output, *flags], check=True)
     subprocess.run([output], check=True)
     javascript = (ROOT / 'Layouts.js').read_text().replace('.pragma library', '')
     javascript += '''
@@ -40,4 +42,4 @@ assert(Math.abs(fallAlpha(90,100)-0.5)<1e-10);
 assert.equal(fallAlpha(100,100),0);
 '''
     subprocess.run(['node', '-e', javascript], check=True)
-print('PASS: JSON/UTF-8, duplicate presses, shared modifiers, unplug cleanup, lock states, split placement, fade endpoints')
+print('PASS: JSON/UTF-8, live layout changes, duplicate presses, shared modifiers, unplug cleanup, lock states, split placement, fade endpoints')

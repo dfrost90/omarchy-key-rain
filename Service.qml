@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.Commons
@@ -30,6 +31,9 @@ Item {
     property string keyboardLayout: "us"
     property string keyboardOptions: ""
     property string activeKeymap: ""
+    property string typedKeyboard: ""
+    property int layoutRevision: 0
+    property int readerLayoutIndex: -1
     property int previewTicks: 0
     signal glyph(string text, int code)
     signal clear()
@@ -49,7 +53,26 @@ Item {
         function setFontSize(value: int): void { root.setFontSize(value) }
         function setOpacity(value: int): void { root.setOpacity(value) }
         function setFallHeight(value: int): void { root.setFallHeight(value) }
-        function status(): string { return JSON.stringify({active: root.active, starting: root.starting, layout: root.layout, followTheme: root.followTheme, colorMode: root.colorMode, customColor: root.customColor.toString(), splitMode: root.splitMode, scrambleOnEntry: root.scrambleOnEntry, scrambleDurationMs: root.scrambleDurationMs, fontSize: root.fontSize, opacityPercent: root.opacityPercent, fallHeightPercent: root.fallHeightPercent, status: root.status}) }
+        function status(): string { return JSON.stringify({active: root.active, starting: root.starting, layout: root.layout, followTheme: root.followTheme, colorMode: root.colorMode, customColor: root.customColor.toString(), splitMode: root.splitMode, scrambleOnEntry: root.scrambleOnEntry, scrambleDurationMs: root.scrambleDurationMs, fontSize: root.fontSize, opacityPercent: root.opacityPercent, fallHeightPercent: root.fallHeightPercent, activeKeymap: root.activeKeymap, readerLayoutIndex: root.readerLayoutIndex, status: root.status}) }
+    }
+    function isTypingKeyboard(name) {
+        return !/^(hl-virtual-keyboard|power-button|sleep-button|lid-switch|video-bus)/.test(name);
+    }
+    function syncLayout() {
+        if (reader.running && active && activeKeymap && activeKeymap.length < 240 && !/[\r\n]/.test(activeKeymap))
+            reader.write("layout " + activeKeymap + "\n");
+    }
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            if (!event || event.name !== "activelayout") return;
+            var parts = event.parse(2);
+            if (parts.length < 2 || !root.isTypingKeyboard(parts[0])) return;
+            root.typedKeyboard = parts[0];
+            root.activeKeymap = parts[1];
+            root.layoutRevision++;
+            root.syncLayout();
+        }
     }
     Process {
         id: lockWatcher
@@ -82,7 +105,7 @@ Item {
         onExited: (code, exitStatus) => {
             if (!root.starting) return;
             if (code === 0) layoutProbe.running = true;
-            else { root.starting = false; root.status = "Build failed · install gcc, pkgconf and libxkbcommon; see README"; }
+            else { root.starting = false; root.status = "Build failed · check build dependencies in README"; }
         }
     }
 
@@ -134,7 +157,8 @@ Item {
     function accept(line) {
         try {
             var event = JSON.parse(line);
-            if (event.type === "ready" && starting && lockSafe) { active = true; starting = false; status = "Enabled · Ctrl+Alt+Esc to disable"; }
+            if (event.type === "ready" && starting && lockSafe) { active = true; starting = false; status = "Enabled · Ctrl+Alt+Esc to disable"; syncLayout(); }
+            else if (event.type === "layout" && Number.isInteger(event.index)) readerLayoutIndex = event.index;
             else if (event.type === "stop") setActive(false);
             else if (event.type === "key" && active && lockSafe && typeof event.text === "string" && event.text.length <= 128 && Number.isInteger(event.code)) glyph(event.text, event.code);
         } catch (error) { status = "Could not read keyboard events"; }
@@ -164,13 +188,17 @@ Item {
     }
     Process {
         id: devicesProbe
+        property int revision: 0
+        onRunningChanged: if (running) revision = root.layoutRevision
         command: ["hyprctl", "-j", "devices"]
         stdout: StdioCollector {
             onStreamFinished: {
+                if (devicesProbe.revision !== root.layoutRevision) return;
                 root.activeKeymap = "";
                 try {
-                    var keyboards = JSON.parse(text).keyboards || [];
-                    var keyboard = keyboards.find(function(k) { return k.main; }) || keyboards[0];
+                    var keyboards = (JSON.parse(text).keyboards || []).filter(function(k) { return root.isTypingKeyboard(k.name || ""); });
+                    var keyboard = keyboards.find(function(k) { return k.name === root.typedKeyboard; })
+                        || keyboards.reduce(function(best, k) { return !best || (k.active_layout_index || 0) > (best.active_layout_index || 0) ? k : best; }, null);
                     if (keyboard) root.activeKeymap = keyboard.active_keymap || "";
                 } catch (e) {}
             }
