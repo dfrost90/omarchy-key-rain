@@ -66,7 +66,7 @@ From its directory, as your normal desktop user:
 ```sh
 python3 install.py
 omarchy-shell shell rescanPlugins
-omarchy plugin enable io.github.dfrost90.falling-keys
+omarchy plugin enable io.github.dfrost90.key-rain
 ```
 
 The installer builds locally and copies only plugin files into your Omarchy
@@ -83,17 +83,18 @@ saved; enable the effect again when ready.
 To remove:
 
 ```sh
-omarchy-shell falling-keys disable
-omarchy plugin disable io.github.dfrost90.falling-keys
+omarchy-shell key-rain disable
+omarchy plugin disable io.github.dfrost90.key-rain
 ```
 
-Delete `~/.config/omarchy/plugins/io.github.dfrost90.falling-keys` (or its
+Delete `~/.config/omarchy/plugins/io.github.dfrost90.key-rain` (or its
 equivalent under `$XDG_CONFIG_HOME`), then run `omarchy-shell shell rescanPlugins`.
 Remove any remaining bar entry through Omarchy's bar editor. There are no system
 services or privilege policies to remove.
 
-The permanent ID and `falling-keys` IPC target retain the original Falling Keys
-name for compatibility. Old theme and scramble toggles migrate automatically.
+The plugin ID is `io.github.dfrost90.key-rain`; its IPC target is `key-rain`.
+When upgrading from a pre-0.8 version, replace the previous plugin/bar entry
+with Key Rain. Copy your display preferences before removing the old entry.
 
 ## Development
 
@@ -114,7 +115,7 @@ short falls. The C tests use AddressSanitizer and UndefinedBehaviorSanitizer.
 state without privileges; only `reader.c` runs through `pkexec`. `SeatAccess.h`
 enforces the privileged reader’s logind/udev ownership checks.
 
-IPC: `omarchy-shell falling-keys status`, `preview`, `enable`, `disable`,
+IPC: `omarchy-shell key-rain status`, `preview`, `enable`, `disable`,
 `setLayout cascade`, `setColorMode custom`, `setCustomColor '#55ccff'`, or
 `setScrambleDuration 300`. IPC settings apply live; panel changes persist them.
 

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "id": "io.github.dfrost90.falling-keys",
+  "id": "io.github.dfrost90.key-rain",
   "name": "Key Rain",
-  "version": "0.7.4",
+  "version": "0.8.0",
   "author": "dfrost90",
   "description": "Click-through falling keystrokes with a layout control panel.",
   "kinds": [

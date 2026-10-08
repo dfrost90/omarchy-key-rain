@@ -6,7 +6,7 @@ import tempfile
 from backend import ROOT, build
 
 FILES = ('manifest.json', 'BarWidget.qml', 'Service.qml', 'Rain.qml', 'Layouts.js',
-         'PercentControl.qml', 'ColorPicker.qml', 'reader.c', 'SeatAccess.h', 'backend.py', 'falling-keys-reader',
+         'PercentControl.qml', 'ColorPicker.qml', 'reader.c', 'SeatAccess.h', 'backend.py', 'key-rain-reader',
          'README.md', 'LICENSE', 'SECURITY.md', 'install.py')
 
 
@@ -14,7 +14,7 @@ def main():
     if os.geteuid() == 0:
         raise SystemExit('Run as your normal desktop user.')
     build()
-    target = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'omarchy/plugins/io.github.dfrost90.falling-keys'
+    target = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'omarchy/plugins/io.github.dfrost90.key-rain'
     if ROOT != target.resolve():
         target.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(prefix='.install-', dir=target.parent) as temporary:

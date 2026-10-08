@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parent
 
 def build():
     source = ROOT / 'reader.c'
-    target = ROOT / 'falling-keys-reader'
+    target = ROOT / 'key-rain-reader'
     if target.is_file() and target.stat().st_mtime_ns >= max(source.stat().st_mtime_ns, (ROOT / 'SeatAccess.h').stat().st_mtime_ns):
         return
     flags = subprocess.check_output(['pkg-config', '--cflags', '--libs', 'xkbcommon', 'libsystemd', 'libudev'], text=True).split()

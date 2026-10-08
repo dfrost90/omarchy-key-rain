@@ -14,7 +14,7 @@ assert lock_state([{'solitaryBlockedBy': ['WORKSPACE']}]) == 'unknown'
 for invalid in ([], {}, None, [{}], [None]):
     assert lock_state(invalid) == 'unknown'
 build()
-rows = [json.loads(line) for line in subprocess.check_output([str(ROOT / 'falling-keys-reader'), '--self-test'], text=True).splitlines()]
+rows = [json.loads(line) for line in subprocess.check_output([str(ROOT / 'key-rain-reader'), '--self-test'], text=True).splitlines()]
 assert [row['text'] for row in rows] == ['A', '"\\', 'ї']
 with tempfile.TemporaryDirectory() as directory:
     output = str(Path(directory) / 'reader-test')

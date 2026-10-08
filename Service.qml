@@ -24,7 +24,7 @@ Item {
     property int fallHeightPercent: 100
     readonly property var fontSizes: [{size: 16, name: "Small"}, {size: 22, name: "Medium"}, {size: 30, name: "Large"}]
     readonly property var layouts: [{id: "matrix", name: "Matrix"}, {id: "cascade", name: "Cascade"}]
-    readonly property string readerPath: decodeURIComponent(Qt.resolvedUrl("falling-keys-reader").toString().replace(/^file:\/\//, ""))
+    readonly property string readerPath: decodeURIComponent(Qt.resolvedUrl("key-rain-reader").toString().replace(/^file:\/\//, ""))
     property bool lockSafe: false
     property bool previewPending: false
     readonly property string directory: decodeURIComponent(Qt.resolvedUrl(".").toString().replace(/^file:\/\//, ""))
@@ -39,7 +39,7 @@ Item {
     signal clear()
 
     IpcHandler {
-        target: "falling-keys"
+        target: "key-rain"
         function preview(): void { root.preview() }
         function disable(): void { root.setActive(false) }
         function enable(): void { root.setActive(true) }
@@ -240,7 +240,7 @@ Item {
             visible: root.previewTicks > 0 || rain.hasParticles
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
-            WlrLayershell.namespace: "omarchy-falling-keys"
+            WlrLayershell.namespace: "omarchy-key-rain"
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
             mask: Region {}

@@ -7,7 +7,7 @@ import qs.Commons
 
 Panel {
     id: root
-    moduleName: "io.github.dfrost90.falling-keys"
+    moduleName: "io.github.dfrost90.key-rain"
     ipcTarget: moduleName
     readonly property var effect: bar && bar.shell ? bar.shell.serviceFor(moduleName) : null
     readonly property color foreground: Color.popups.text
