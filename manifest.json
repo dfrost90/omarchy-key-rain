@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.dfrost90.falling-keys",
+  "name": "Key Rain",
+  "version": "0.6.1",
+  "author": "dfrost90",
+  "description": "Click-through falling keystrokes with a layout control panel.",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "Key Rain",
+    "category": "Appearance",
+    "allowMultiple": false,
+    "defaultSection": "left",
+    "defaults": {
+      "layout": "matrix",
+      "followTheme": false,
+      "splitMode": false,
+      "fontSize": 22,
+      "opacityPercent": 100,
+      "fallHeightPercent": 100
+    },
+    "schema": [
+      {
+        "key": "layout",
+        "type": "string",
+        "label": "Animation layout"
+      },
+      {
+        "key": "followTheme",
+        "type": "boolean",
+        "label": "Follow theme"
+      },
+      {
+        "key": "splitMode",
+        "type": "boolean",
+        "label": "Split keyboard"
+      },
+      {
+        "key": "fontSize",
+        "type": "number",
+        "label": "Glyph font size (16, 22, or 30 px)"
+      },
+      {
+        "key": "opacityPercent",
+        "type": "number",
+        "label": "Opacity (10–100%)"
+      },
+      {
+        "key": "fallHeightPercent",
+        "type": "number",
+        "label": "Fall height (10–100% of screen)"
+      }
+    ]
+  },
+  "license": "MIT"
+}
